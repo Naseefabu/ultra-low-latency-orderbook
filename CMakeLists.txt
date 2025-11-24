@@ -1,29 +1,50 @@
-cmake_minimum_required(VERSION 3.16)
-set (CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_COMPILER /usr/bin/clang++)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-set (CMAKE_CXX_FLAGS "-O3 -pthread -DNDEBUG -lssl -lcrypto")
-set(CMAKE_BUILD_TYPE "Release")
-project(hftbot)
-  
-include(FetchContent)
+cmake_minimum_required(VERSION 3.28.0)
+project("Ultra low latency L2/L3 orderbook")
 
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.10.5/json.tar.xz)
-FetchContent_MakeAvailable(json)
+include(tools/cmake/executable_macros.cmake)
+include(tools/cmake/lib_macros.cmake)
+include(tools/cmake/required_packages.cmake)
+include(tools/cmake/test_macros.cmake)
+include(tools/cmake/benchmark_macros.cmake)
+include(tools/cmake/macros.cmake)
 
-find_package(Boost 1.79.0 REQUIRED COMPONENTS system thread filesystem container)
-find_package(Threads REQUIRED)
+add_option(ENABLE_SANITIZERS "Enables fsan sanitizers")
+add_option(ENABLE_STATIC_ANALYSIS "Enables clang-tidy static analysis")
 
-set(URLIB_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/external/url/include")
-set(URLIB_HEADERS ${URLIB_DIRECTORY}/boost/url.hpp ${URLIB_DIRECTORY}/boost/url/src.hpp)
-set(SOURCES adapters/bitfinex/bitfinex-http.cpp features/TapeSpeedIndicator.cpp main/main.cpp adapters/binance/binance-http.cpp adapters/utils/utils.cpp adapters/ftx/ftx-http.cpp  adapters/coinbase/coinbase-http.cpp  adapters/kraken/kraken-http.cpp)
+logged_set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -march=native")
+logged_set(CMAKE_CXX_STANDARD 23)
+logged_set(CMAKE_CXX_STANDARD_REQUIRED ON)
+logged_set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+logged_set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+logged_set(ASAN_FLAGS -fsanitize=address,leak,undefined,float-divide-by-zero,float-cast-overflow)
+logged_set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}")
+logged_set(
+    CLANG_WARNINGS
+    -Wall
+    -Wextra
+    -Wshadow
+    -Wnon-virtual-dtor
+    -Wold-style-cast
+    -Wcast-align
+    -Wunused
+    -Woverloaded-virtual
+    -Wpedantic
+    -Wconversion
+    -Wsign-conversion
+    -Wnull-dereference
+    -Wdouble-promotion
+    -Wformat=2
+    -Wimplicit-fallthrough
+    -Werror
+)
 
-add_executable(${PROJECT_NAME} ${SOURCES})
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
-target_include_directories(${PROJECT_NAME} PUBLIC ${URLIB_DIRECTORY})
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/adapters/bitfinex ${PROJECT_SOURCE_DIR}/features ${PROJECT_SOURCE_DIR}/adapters/binance ${PROJECT_SOURCE_DIR}/main ${PROJECT_SOURCE_DIR}/adapters/ftx ${PROJECT_SOURCE_DIR}/adapters/coinbase ${PROJECT_SOURCE_DIR}/adapters/kraken ${PROJECT_SOURCE_DIR}/adapters/utils)
+add_subdirectory(modules)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost Threads::Threads)
-target_link_libraries(${PROJECT_NAME} PUBLIC ssl crypto)
-target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+if(ENABLE_STATIC_ANALYSIS)
+    find_program(CLANG_TIDY_EXE NAMES "clang-tidy" REQUIRED)
+endif()
 
+if(ENABLE_SANITIZERS)
+    add_link_options(-fsanitize=address,undefined,float-divide-by-zero,float-cast-overflow)
+    add_compile_options(-fsanitize=address,undefined,float-divide-by-zero,float-cast-overflow -fno-omit-frame-pointer)
+endif()

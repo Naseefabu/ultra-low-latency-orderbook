@@ -1,0 +1,17 @@
+macro(add_executable_module exename)
+    set(source_files)
+    set(source_directory "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    foreach(source_file ${ARGN})
+        list(APPEND source_files "${source_directory}/${source_file}")
+    endforeach()
+
+    message("Adding executable ${exename} with source files: ${source_files}")
+    add_executable(${exename} ${source_files})
+    target_include_directories(${exename} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_compile_options(${exename} PRIVATE ${WARNING_FLAGS})
+    target_link_libraries(${exename} PUBLIC common)
+
+    if(ENABLE_STATIC_ANALYSIS)
+        set_target_properties(${exename} PROPERTIES CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+    endif()
+endmacro()

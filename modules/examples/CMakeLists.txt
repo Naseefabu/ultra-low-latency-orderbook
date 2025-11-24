@@ -1,0 +1,3 @@
+add_executable_module(orderbook_demo orderbook.cpp)
+
+target_link_libraries(orderbook_demo PRIVATE orderbook)
