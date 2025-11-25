@@ -14,4 +14,4 @@ Email: naseefabu1000@gmail.com
 
 Discord: hftssss
 
-Telegram: @Naseefabu
+Telegram: @hft101
