@@ -2,6 +2,7 @@
 
 /* utilities */
 #include <any>
+#include <cassert>
 #include <chrono>
 #include <cinttypes>
 #include <csignal>

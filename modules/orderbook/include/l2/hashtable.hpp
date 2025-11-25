@@ -2,8 +2,6 @@
 
 #include <core/dllist.hpp>
 
-using namespace std;
-
 namespace hft::orderbook {
 
 struct Level
@@ -24,11 +22,21 @@ public:
 
 	static constexpr size_t ENTRIES_MASK = ENTRIES - 1;
 
+	// --- State Markers for uint64_t price field ---
+	// Price = 0 means the slot is not occupied and stops a search (TERMINAL)
+	// Price = ~0ULL (all bits set) means the slot is not occupied but must be
+	// traversed (TOMBSTONE).
+	static constexpr uint64_t TABLE_TERMINAL_ID = 0ULL;
+
+	static constexpr uint64_t TABLE_TOMBSTONE_ID = ~0ULL;
+
 	struct L2Entry
 	{
 		uint64_t price {};
 
 		Level *ptr = nullptr;
+
+		uint16_t route_count {};
 	};
 
 	L2HashTable() = default;
@@ -43,6 +51,11 @@ public:
 
 	auto remove(uint64_t price) -> bool;
 
+	void reset()
+	{
+		m_table.fill(L2Entry {});
+	}
+
 private:
 	[[nodiscard]] auto hash1(uint64_t key) const -> size_t
 	{
@@ -56,7 +69,7 @@ private:
 		key *= 0xc4ceb9fe1a85ec53ULL;
 		key ^= key >> 33;
 		auto h = static_cast<size_t>(key) & ENTRIES_MASK;
-		return (h | 1); // Ensure odd for better probing
+		return (h | 1); // Ensure odd for double hashing
 	}
 
 	[[nodiscard]] auto matches(const L2Entry &entry, uint64_t key) const -> bool
@@ -66,12 +79,12 @@ private:
 
 	[[nodiscard]] auto is_occupied(const L2Entry &entry) const noexcept -> bool
 	{
-		return entry.price != 0 && entry.price != ~0ULL;
+		return entry.price != TABLE_TERMINAL_ID && entry.price != TABLE_TOMBSTONE_ID;
 	}
 
 	[[nodiscard]] auto is_tombstone(const L2Entry &entry) const noexcept -> bool
 	{
-		return entry.price == ~0ULL;
+		return entry.price == TABLE_TOMBSTONE_ID;
 	}
 
 	std::array<L2Entry, ENTRIES> m_table {};

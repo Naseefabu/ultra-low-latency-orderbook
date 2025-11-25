@@ -33,20 +33,21 @@ auto L2HashTable::insert(uint64_t price, Level *level) -> bool
 	do
 	{
 		auto &entry = m_table[index];
-		if (is_occupied(entry))
-		{
-			if (matches(entry, price))
-			{
-				entry.ptr = level;
-				return true;
-			}
-		}
-		else
+
+		entry.route_count++;
+
+		if (!is_occupied(entry))
 		{
 			entry.price = price;
 			entry.ptr = level;
 			return true;
 		}
+
+		if (matches(entry, price))
+		{
+			throw std::runtime_error("Adding a duplicate entry is illegal");
+		}
+
 		index = (index + hash2(price)) & ENTRIES_MASK;
 	} while (index != first_index);
 
@@ -60,19 +61,28 @@ auto L2HashTable::remove(uint64_t price) -> bool
 	do
 	{
 		auto &entry = m_table[index];
+
+		assert(entry.route_count > 0 && "Route count must be > 0 when traversing a populated slot");
+		entry.route_count--;
+
 		if (is_occupied(entry))
 		{
 			if (matches(entry, price))
 			{
-				entry.price = ~0ULL;
+				if (entry.route_count == 0)
+				{
+					entry.price = TABLE_TERMINAL_ID;
+				}
+				else
+				{
+					// If other entries depend on this slot, mark as TOMBSTONE
+					entry.price = TABLE_TOMBSTONE_ID;
+				}
 				entry.ptr = nullptr;
 				return true;
 			}
 		}
-		else if (!is_tombstone(entry))
-		{
-			return false;
-		}
+
 		index = (index + hash2(price)) & ENTRIES_MASK;
 	} while (index != first_index);
 

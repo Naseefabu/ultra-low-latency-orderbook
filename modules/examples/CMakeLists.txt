@@ -1,3 +1,3 @@
-add_executable_module(orderbook_demo orderbook.cpp)
+add_executable_module(orderbook_demo orderbook_debug.cpp)
 
 target_link_libraries(orderbook_demo PRIVATE orderbook)
