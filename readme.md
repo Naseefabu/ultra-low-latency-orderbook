@@ -1,4 +1,4 @@
-# Ultra Low latency l2/l3 OrderBook for crypto  
+# Ultra Low latency L2/L3 OrderBook for crypto  
 
 
 ### Benchmark
