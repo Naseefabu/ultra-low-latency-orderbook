@@ -1,9 +1,15 @@
 # ultra low latency L2/L3 orderbook for crypto  
 
+### Design
+* Fixed size orderbook
+* Instrusive doubly linked list
+* O(1) alloc & dealloc contigous memory pool
+* O(1) update
+* O(1) delete (no moves or copy)
+* O(N)
 
 ### Benchmark
 ![alt text](image.png)
-
 
 ### MIT License
 
