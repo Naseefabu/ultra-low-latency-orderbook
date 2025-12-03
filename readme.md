@@ -6,7 +6,7 @@
 * O(1) alloc & dealloc contigous memory pool
 * O(1) update
 * O(1) delete (no moves or copy)
-* O(N)
+* O(N) Linear inserts
 
 ### Benchmark
 ![alt text](image.png)
