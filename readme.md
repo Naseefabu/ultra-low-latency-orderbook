@@ -4,6 +4,7 @@
 * Fixed size orderbook
 * Instrusive doubly linked list
 * O(1) alloc & dealloc contigous memory pool
+* Custom hashtable
 * O(1) update
 * O(1) delete (no moves or copy)
 * O(N) Linear inserts
